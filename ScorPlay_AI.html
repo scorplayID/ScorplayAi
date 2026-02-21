@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ScorPlay AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BASE RESET & VARIABLES
+============================================================ */
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg: #ffffff;
+  --bg2: #f3f3f8;
+  --bg3: #e8e8f0;
+  --surface: #f8f8fc;
+  --text: #111111;
+  --text2: #555555;
+  --text3: #999999;
+  --text4: #cccccc;
+  --border: #eeeeee;
+  --hdr-btn-bg: #f0f0f5;
+  --icon-stroke: #555;
+  --overlay: rgba(0,0,0,0.35);
+  --panel-bg: #ffffff;
+  --toggle-off: #d0d0d8;
+  --toggle-on: #111111;
+  --accent: #111111;
+  --sep: #f0f0f6;
+}
+
+body.dark {
+  --bg: #0f0f13;
+  --bg2: #1a1a22;
+  --bg3: #232330;
+  --surface: #16161e;
+  --text: #f0f0f5;
+  --text2: #aaaaaa;
+  --text3: #666688;
+  --text4: #444455;
+  --border: #2a2a38;
+  --hdr-btn-bg: #1e1e28;
+  --icon-stroke: #aaa;
+  --panel-bg: #14141c;
+  --toggle-off: #333344;
+  --toggle-on: #a78bfa;
+  --accent: #a78bfa;
+  --sep: #1e1e2a;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: #d0d0d8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  transition: background 0.3s;
+}
+
+.phone {
+  width: 100%;
+  max-width: 430px;
+  height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+
+/* ============================================================
+   SPIN BORDER ANIMATION
+============================================================ */
+@keyframes spinBorder {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   NAME SCREEN
+============================================================ */
+#nameScreen {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 40px 28px;
+  z-index: 200;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+#nameScreen.exit {
+  opacity: 0;
+  transform: translateY(-22px);
+  pointer-events: none;
+}
+
+.ns-logo {
+  width: 68px; height: 68px;
+  background: var(--text);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+@keyframes popIn {
+  from { opacity:0; transform:scale(0.6); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+.ns-title {
+  font-size: 24px; font-weight: 800;
+  color: var(--text);
+  text-align: center; line-height: 1.35;
+  letter-spacing: -0.2px;
+  animation: fadeSlideUp 0.5s 0.1s ease both;
+}
+
+.ns-sub {
+  display: block;
+  font-size: 14px; font-weight: 400;
+  color: var(--text3);
+  margin-top: 6px;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.ns-border-wrap {
+  width: 100%;
+  border-radius: 50px;
+  padding: 2.5px;
+  position: relative;
+  overflow: hidden;
+  animation: fadeSlideUp 0.5s 0.2s ease both;
+}
+
+.ns-border-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(#c084fc,#f9a8d4,#818cf8,#c084fc,#f9a8d4,#818cf8,#c084fc);
+  animation: spinBorder 2s linear infinite;
+}
+
+.ns-inner {
+  position: relative;
+  background: var(--bg);
+  border-radius: 47px;
+  display: flex; align-items: center;
+  padding: 5px 5px 5px 20px;
+  z-index: 1;
+}
+
+.ns-input {
+  flex: 1; border: none; outline: none;
+  font-size: 15px; font-family: 'Inter', sans-serif;
+  color: var(--text);
+  background: transparent;
+  padding: 10px 0;
+}
+
+.ns-input::placeholder { color: var(--text4); }
+
+.ns-btn {
+  width: 46px; height: 46px;
+  background: var(--text);
+  border: none; border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.ns-btn:active { transform: scale(0.9); }
+
+/* ============================================================
+   MAIN APP
+============================================================ */
+#app {
+  display: flex; flex-direction: column;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.4s ease 0.15s;
+}
+
+#app.show { opacity: 1; }
+
+/* ============================================================
+   HEADER
+============================================================ */
+.header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 14px;
+  background: var(--bg);
+  transition: background 0.3s;
+  position: relative;
+  z-index: 10;
+}
+
+.hdr-left {
+  width: 52px; height: 52px;
+  background: var(--text);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: transform 0.15s, background 0.3s;
+  animation: fadeSlideLeft 0.4s ease both;
+}
+
+@keyframes fadeSlideLeft {
+  from { opacity:0; transform:translateX(-16px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+.hdr-left:active { transform: scale(0.92); }
+
+.hdr-right {
+  display: flex; align-items: center;
+  background: var(--hdr-btn-bg);
+  border-radius: 30px;
+  padding: 5px 8px; gap: 4px;
+  transition: background 0.3s;
+  animation: fadeSlideRight 0.4s ease both;
+}
+
+@keyframes fadeSlideRight {
+  from { opacity:0; transform:translateX(16px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+
+.hdr-btn {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.hdr-btn:active { transform: scale(0.9); background: var(--bg3); }
+
+/* ============================================================
+   CHAT AREA
+============================================================ */
+#chatArea {
+  flex: 1; overflow-y: auto;
+  padding: 0 20px 8px;
+  display: flex; flex-direction: column;
+  scrollbar-width: none;
+}
+
+#chatArea::-webkit-scrollbar { display: none; }
+
+.welcome-wrap {
+  flex: 1; display: flex;
+  align-items: center; justify-content: center;
+  animation: fadeSlideUp 0.5s 0.3s ease both;
+}
+
+.welcome-text {
+  font-size: 28px; font-weight: 800;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.45;
+  letter-spacing: -0.2px;
+  transition: color 0.3s;
+}
+
+.msg {
+  max-width: 78%;
+  margin-bottom: 10px;
+  animation: msgPop 0.25s cubic-bezier(0.34,1.4,0.64,1) both;
+}
+
+@keyframes msgPop {
+  from { opacity:0; transform:scale(0.85) translateY(10px); }
+  to   { opacity:1; transform:scale(1) translateY(0); }
+}
+
+.msg.user { align-self: flex-end; }
+.msg.ai   { align-self: flex-start; }
+
+.bubble {
+  padding: 12px 16px;
+  border-radius: 22px;
+  font-size: 15px; line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+  transition: background 0.3s, color 0.3s;
+}
+
+.msg.user .bubble {
+  background: var(--text);
+  color: var(--bg);
+  border-bottom-right-radius: 5px;
+}
+
+.msg.ai .bubble {
+  background: var(--bg2);
+  color: var(--text);
+  border-bottom-left-radius: 5px;
+}
+
+.msg-time {
+  font-size: 11px; color: var(--text4);
+  margin-top: 3px; padding: 0 4px;
+  transition: color 0.3s;
+}
+
+.typing-bubble {
+  display: flex; gap: 5px; align-items: center;
+  padding: 14px 18px;
+  background: var(--bg2);
+  border-radius: 22px;
+  border-bottom-left-radius: 5px;
+  width: fit-content;
+  animation: msgPop 0.25s ease both;
+}
+
+.dot {
+  width: 7px; height: 7px;
+  background: var(--text3);
+  border-radius: 50%;
+  animation: dotBounce 1.3s infinite;
+}
+
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotBounce {
+  0%,60%,100% { transform:translateY(0); opacity:0.4; }
+  30%          { transform:translateY(-7px); opacity:1; }
+}
+
+/* ============================================================
+   INPUT AREA
+============================================================ */
+.input-area {
+  padding: 8px 16px 26px;
+  background: var(--bg);
+  transition: background 0.3s;
+  animation: fadeSlideUp 0.5s 0.2s ease both;
+}
+
+.input-border-wrap {
+  border-radius: 50px; padding: 2.5px;
+  position: relative; overflow: hidden;
+}
+
+.input-border-wrap::before {
+  content: '';
+  position: absolute; inset: -50%;
+  background: conic-gradient(#c084fc,#f9a8d4,#818cf8,#c084fc,#f9a8d4,#818cf8,#c084fc);
+  animation: spinBorder 2s linear infinite;
+}
+
+.input-inner {
+  position: relative;
+  background: var(--bg);
+  border-radius: 47px;
+  display: flex; align-items: center;
+  padding: 5px 5px 5px 20px;
+  z-index: 1;
+  transition: background 0.3s;
+}
+
+.chat-input {
+  flex: 1; border: none; outline: none;
+  font-size: 15px; font-family: 'Inter', sans-serif;
+  color: var(--text); background: transparent;
+  padding: 10px 0;
+  transition: color 0.3s;
+}
+
+.chat-input::placeholder { color: var(--text4); }
+
+.send-btn {
+  width: 46px; height: 46px;
+  background: var(--text);
+  border: none; border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s, opacity 0.2s, background 0.3s;
+}
+
+.send-btn:active { transform: scale(0.9); }
+
+.disclaimer {
+  text-align: center;
+  font-size: 12px; color: var(--text4);
+  margin-top: 9px;
+  transition: color 0.3s;
+}
+
+/* ============================================================
+   OVERLAY BACKDROP
+============================================================ */
+.overlay {
+  position: absolute; inset: 0;
+  background: var(--overlay);
+  z-index: 100;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.overlay.show { opacity: 1; pointer-events: all; }
+
+/* ============================================================
+   SIDE PANEL (shared base)
+============================================================ */
+.side-panel {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 82%;
+  max-width: 320px;
+  background: var(--panel-bg);
+  z-index: 110;
+  display: flex; flex-direction: column;
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), background 0.3s;
+  overflow: hidden;
+}
+
+.side-panel.from-left {
+  left: 0;
+  transform: translateX(-100%);
+  border-radius: 0 24px 24px 0;
+  box-shadow: 4px 0 32px rgba(0,0,0,0.12);
+}
+
+.side-panel.from-left.open { transform: translateX(0); }
+
+/* Settings from top-left */
+.settings-panel {
+  position: absolute;
+  top: 0; left: 0;
+  width: 82%;
+  max-width: 320px;
+  bottom: 0;
+  background: var(--panel-bg);
+  z-index: 110;
+  display: flex; flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), background 0.3s;
+  border-radius: 0 24px 24px 0;
+  box-shadow: 4px 0 32px rgba(0,0,0,0.12);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.settings-panel::-webkit-scrollbar { display: none; }
+.settings-panel.open { transform: translateX(0); }
+
+/* Panel header */
+.panel-header {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--sep);
+  transition: border-color 0.3s;
+  flex-shrink: 0;
+}
+
+.panel-title {
+  font-size: 18px; font-weight: 800;
+  color: var(--text);
+  transition: color 0.3s;
+}
+
+.panel-close {
+  width: 34px; height: 34px;
+  background: var(--bg3);
+  border: none; border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.panel-close:active { transform: scale(0.9); }
+
+/* ============================================================
+   HISTORY PANEL
+============================================================ */
+#historyPanel { overflow: hidden; }
+
+.history-body {
+  flex: 1; overflow-y: auto;
+  padding: 12px 0;
+  scrollbar-width: none;
+}
+
+.history-body::-webkit-scrollbar { display: none; }
+
+.history-empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 24px; gap: 12px;
+  color: var(--text3);
+  font-size: 14px; text-align: center;
+}
+
+.history-empty-icon {
+  width: 52px; height: 52px;
+  background: var(--bg3);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+
+.history-item {
+  display: flex; align-items: center;
+  padding: 14px 20px; gap: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-radius: 0;
+}
+
+.history-item:hover { background: var(--bg2); }
+.history-item:active { background: var(--bg3); }
+
+.history-icon {
+  width: 40px; height: 40px;
+  background: var(--bg3);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.history-info { flex: 1; min-width: 0; }
+
+.history-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--text);
+  white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.3s;
+}
+
+.history-preview {
+  font-size: 12px; color: var(--text3);
+  white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  transition: color 0.3s;
+}
+
+.history-time {
+  font-size: 11px; color: var(--text4);
+  flex-shrink: 0;
+  transition: color 0.3s;
+}
+
+.history-new-btn {
+  margin: 12px 20px;
+  padding: 14px;
+  background: var(--text);
+  color: var(--bg);
+  border: none; border-radius: 14px;
+  font-size: 14px; font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  width: calc(100% - 40px);
+  transition: opacity 0.15s, transform 0.15s, background 0.3s;
+}
+
+.history-new-btn:active { opacity: 0.8; transform: scale(0.97); }
+
+/* ============================================================
+   SETTINGS PANEL
+============================================================ */
+.settings-section {
+  padding: 16px 20px 4px;
+}
+
+.settings-section-label {
+  font-size: 11px; font-weight: 700;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+  transition: color 0.3s;
+}
+
+.settings-card {
+  background: var(--bg2);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  transition: background 0.3s;
+}
+
+.settings-row {
+  display: flex; align-items: center;
+  padding: 14px 16px; gap: 14px;
+  border-bottom: 1px solid var(--sep);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.settings-row:last-child { border-bottom: none; }
+.settings-row:active { background: var(--bg3); }
+
+.settings-row-icon {
+  width: 36px; height: 36px;
+  background: var(--bg3);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.settings-row-info { flex: 1; }
+
+.settings-row-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--text);
+  transition: color 0.3s;
+}
+
+.settings-row-sub {
+  font-size: 12px; color: var(--text3);
+  margin-top: 1px;
+  transition: color 0.3s;
+}
+
+/* Toggle */
+.toggle {
+  width: 44px; height: 26px;
+  background: var(--toggle-off);
+  border-radius: 13px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.25s;
+  border: none;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  width: 20px; height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.toggle.on { background: var(--toggle-on); }
+.toggle.on::after { transform: translateX(18px); }
+
+/* Select Pill */
+.select-pill {
+  display: flex;
+  background: var(--bg3);
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.select-opt {
+  padding: 6px 12px;
+  font-size: 12px; font-weight: 600;
+  color: var(--text3);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  border: none; background: transparent;
+  font-family: 'Inter', sans-serif;
+}
+
+.select-opt.active {
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 8px;
+}
+
+/* Slider */
+.slider-row {
+  display: flex; align-items: center;
+  gap: 10px; padding: 0 16px 14px;
+}
+
+.range-input {
+  flex: 1; appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg3);
+  outline: none;
+  cursor: pointer;
+}
+
+.range-input::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--text);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.range-label {
+  font-size: 13px; color: var(--text3);
+  min-width: 28px; text-align: center;
+}
+
+/* Version tag */
+.version-tag {
+  text-align: center;
+  font-size: 12px; color: var(--text4);
+  padding: 20px 0 28px;
+  transition: color 0.3s;
+}
+
+/* ============================================================
+   CONFIRM MODAL
+============================================================ */
+.modal {
+  position: absolute; inset: 0;
+  z-index: 150;
+  display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.25s;
+}
+
+.modal.show { opacity: 1; pointer-events: all; }
+
+.modal-backdrop {
+  position: absolute; inset: 0;
+  background: var(--overlay);
+}
+
+.modal-card {
+  position: relative;
+  background: var(--panel-bg);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  padding: 24px 24px 36px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.modal.show .modal-card { transform: translateY(0); }
+
+.modal-handle {
+  width: 36px; height: 4px;
+  background: var(--bg3);
+  border-radius: 2px;
+  margin: 0 auto 20px;
+}
+
+.modal-title {
+  font-size: 17px; font-weight: 800;
+  color: var(--text); margin-bottom: 6px;
+  transition: color 0.3s;
+}
+
+.modal-sub {
+  font-size: 14px; color: var(--text3);
+  margin-bottom: 24px; line-height: 1.5;
+  transition: color 0.3s;
+}
+
+.modal-btns { display: flex; gap: 10px; }
+
+.modal-btn {
+  flex: 1; padding: 14px;
+  border: none; border-radius: 14px;
+  font-size: 15px; font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.modal-btn:active { opacity: 0.8; transform: scale(0.97); }
+
+.modal-btn.cancel {
+  background: var(--bg3);
+  color: var(--text);
+}
+
+.modal-btn.confirm {
+  background: var(--text);
+  color: var(--bg);
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+.toast {
+  position: absolute;
+  bottom: 90px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap;
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================================
+   CHAT DATE DIVIDER
+============================================================ */
+.date-divider {
+  display: flex; align-items: center;
+  gap: 10px; margin: 10px 0;
+  animation: fadeSlideUp 0.3s ease both;
+}
+
+.date-divider::before, .date-divider::after {
+  content: ''; flex: 1;
+  height: 1px; background: var(--sep);
+  transition: background 0.3s;
+}
+
+.date-label {
+  font-size: 11px; color: var(--text3);
+  font-weight: 600; white-space: nowrap;
+  transition: color 0.3s;
+}
+
+/* ============================================================
+   FONT SIZE UTILITY
+============================================================ */
+body.font-sm { font-size: 13px; }
+body.font-lg { font-size: 17px; }
+
+/* Hdr left icon color adapts */
+.hdr-left-icon { filter: none; }
+body.dark .hdr-left-icon { filter: brightness(0) invert(1); }
+
+/* Error bubble */
+.msg.ai .bubble.error-bubble {
+  background: #fee2e2;
+  color: #dc2626;
+}
+body.dark .msg.ai .bubble.error-bubble {
+  background: #2d1515;
+  color: #f87171;
+}
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+<!-- ==================== NAME SCREEN ==================== -->
+<div id="nameScreen">
+  <div class="ns-logo">
+    <svg width="26" height="20" viewBox="0 0 26 20" fill="none">
+      <rect y="0"    width="26" height="3" rx="1.5" fill="white"/>
+      <rect y="8.5"  width="26" height="3" rx="1.5" fill="white"/>
+      <rect y="17"   width="26" height="3" rx="1.5" fill="white"/>
+    </svg>
+  </div>
+  <div class="ns-title">
+    Siapa nama kamu?
+    <span class="ns-sub">Masukkan nama untuk memulai</span>
+  </div>
+  <div class="ns-border-wrap">
+    <div class="ns-inner">
+      <input class="ns-input" id="nameInput" type="text" placeholder="Tulis nama kamu..." maxlength="30" autocomplete="off"/>
+      <button class="ns-btn" id="nameSubmit">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M22 2L11 13" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MAIN APP ==================== -->
+<div id="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="hdr-left" id="btnHistory" title="Riwayat Chat">
+      <svg width="24" height="18" viewBox="0 0 24 18" fill="none">
+        <rect width="24" height="2.8" rx="1.4" fill="white"/>
+        <rect y="7.6"  width="24" height="2.8" rx="1.4" fill="white"/>
+        <rect y="15.2" width="24" height="2.8" rx="1.4" fill="white"/>
+      </svg>
+    </div>
+    <div class="hdr-right">
+      <button class="hdr-btn" id="btnNewChat" title="Chat Baru">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="8.5" cy="11" r="1.2" fill="var(--icon-stroke)"/>
+          <circle cx="12"  cy="11" r="1.2" fill="var(--icon-stroke)"/>
+          <circle cx="15.5" cy="11" r="1.2" fill="var(--icon-stroke)"/>
+        </svg>
+      </button>
+      <button class="hdr-btn" id="btnSettings" title="Profil & Pengaturan">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="8" r="4" stroke="var(--icon-stroke)" stroke-width="2"/>
+          <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Chat Area -->
+  <div id="chatArea">
+    <div class="welcome-wrap" id="welcomeWrap">
+      <div class="welcome-text" id="welcomeText"></div>
+    </div>
+  </div>
+
+  <!-- Input Area -->
+  <div class="input-area">
+    <div class="input-border-wrap">
+      <div class="input-inner">
+        <input class="chat-input" id="chatInput" type="text" placeholder="Tanya ScorPlay Ai" autocomplete="off"/>
+        <button class="send-btn" id="sendBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M22 2L11 13" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="disclaimer" id="disclaimer">Ai dapat memberikan jawaban yang salah kapan pun</div>
+  </div>
+</div>
+
+<!-- ==================== OVERLAY ==================== -->
+<div class="overlay" id="overlay"></div>
+
+<!-- ==================== HISTORY PANEL ==================== -->
+<div class="side-panel from-left" id="historyPanel">
+  <div class="panel-header">
+    <span class="panel-title" id="historyTitle">Riwayat Chat</span>
+    <button class="panel-close" id="closeHistory">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M1 1l12 12M13 1L1 13" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+  <div class="history-body" id="historyBody"></div>
+</div>
+
+<!-- ==================== SETTINGS PANEL ==================== -->
+<div class="settings-panel" id="settingsPanel">
+  <div class="panel-header">
+    <span class="panel-title" id="settingsTitle">Pengaturan</span>
+    <button class="panel-close" id="closeSettings">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M1 1l12 12M13 1L1 13" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Profile -->
+  <div class="settings-section">
+    <div class="settings-section-label" id="lblProfile">Profil</div>
+    <div class="settings-card">
+      <div class="settings-row" style="cursor:default">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="4" stroke="var(--icon-stroke)" stroke-width="2"/>
+            <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="profileName">—</div>
+          <div class="settings-row-sub" id="lblUser">Pengguna ScorPlay AI</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tampilan -->
+  <div class="settings-section">
+    <div class="settings-section-label" id="lblTampilan">Tampilan</div>
+    <div class="settings-card">
+      <!-- Dark mode -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblDark">Mode Gelap</div>
+          <div class="settings-row-sub" id="lblDarkSub">Ubah tema ke gelap</div>
+        </div>
+        <button class="toggle" id="toggleDark"></button>
+      </div>
+      <!-- Language -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="var(--icon-stroke)" stroke-width="2"/>
+            <path d="M12 3c2 3 3 5.5 3 9s-1 6-3 9M12 3c-2 3-3 5.5-3 9s1 6 3 9M3 12h18" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblLang">Bahasa</div>
+          <div class="settings-row-sub" id="lblLangSub">Pilih bahasa antarmuka</div>
+        </div>
+        <div class="select-pill">
+          <button class="select-opt active" id="optID" onclick="setLang('id')">ID</button>
+          <button class="select-opt"        id="optEN" onclick="setLang('en')">EN</button>
+        </div>
+      </div>
+      <!-- Font size -->
+      <div class="settings-row" style="flex-direction:column; align-items:flex-start; gap:10px; cursor:default">
+        <div style="display:flex;align-items:center;gap:14px;width:100%">
+          <div class="settings-row-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M4 20h2l1.5-4h5l1.5 4h2L11 4H9L4 20zM8.5 14l1.5-4 1.5 4H8.5z" fill="var(--icon-stroke)"/>
+              <path d="M17 14h2m-1-1v2" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="settings-row-info">
+            <div class="settings-row-title" id="lblFont">Ukuran Font</div>
+            <div class="settings-row-sub" id="lblFontSub">Sesuaikan ukuran teks</div>
+          </div>
+        </div>
+        <div class="slider-row" style="width:100%;padding:0 0 0 0">
+          <span class="range-label" style="font-size:11px">A</span>
+          <input type="range" class="range-input" id="fontRange" min="0" max="2" step="1" value="1">
+          <span class="range-label" style="font-size:17px">A</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div class="settings-section">
+    <div class="settings-section-label" id="lblChatSect">Chat</div>
+    <div class="settings-card">
+      <!-- Sound -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" stroke="var(--icon-stroke)" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblSound">Suara Notifikasi</div>
+          <div class="settings-row-sub" id="lblSoundSub">Mainkan suara saat pesan tiba</div>
+        </div>
+        <button class="toggle on" id="toggleSound"></button>
+      </div>
+      <!-- Auto scroll -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12l7 7 7-7" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblAutoScroll">Auto Scroll</div>
+          <div class="settings-row-sub" id="lblAutoScrollSub">Gulir otomatis ke pesan terbaru</div>
+        </div>
+        <button class="toggle on" id="toggleAutoScroll"></button>
+      </div>
+      <!-- Show timestamp -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="var(--icon-stroke)" stroke-width="2"/>
+            <path d="M12 7v5l3 3" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblTimestamp">Tampilkan Waktu</div>
+          <div class="settings-row-sub" id="lblTimestampSub">Tampilkan waktu pengiriman pesan</div>
+        </div>
+        <button class="toggle on" id="toggleTimestamp"></button>
+      </div>
+      <!-- Bubble style -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="5" width="18" height="14" rx="5" stroke="var(--icon-stroke)" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblBubble">Gaya Bubble</div>
+          <div class="settings-row-sub" id="lblBubbleSub">Tampilan gelembung pesan</div>
+        </div>
+        <div class="select-pill">
+          <button class="select-opt active" id="optBubRound" onclick="setBubble('round')">●</button>
+          <button class="select-opt"        id="optBubSharp" onclick="setBubble('sharp')">■</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI -->
+  <div class="settings-section">
+    <div class="settings-section-label" id="lblAISect">AI</div>
+    <div class="settings-card">
+      <!-- Response length -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 6h18M3 12h12M3 18h8" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblRespLen">Panjang Respons</div>
+          <div class="settings-row-sub" id="lblRespLenSub">Respons singkat / sedang / panjang</div>
+        </div>
+        <div class="select-pill">
+          <button class="select-opt"        id="optShort"  onclick="setRespLen('short')">S</button>
+          <button class="select-opt active"  id="optMedium" onclick="setRespLen('medium')">M</button>
+          <button class="select-opt"        id="optLong"   onclick="setRespLen('long')">L</button>
+        </div>
+      </div>
+      <!-- Typing indicator -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="7"  cy="12" r="1.5" fill="var(--icon-stroke)"/>
+            <circle cx="12" cy="12" r="1.5" fill="var(--icon-stroke)"/>
+            <circle cx="17" cy="12" r="1.5" fill="var(--icon-stroke)"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblTypingInd">Indikator Mengetik</div>
+          <div class="settings-row-sub" id="lblTypingIndSub">Animasi ... saat AI memproses</div>
+        </div>
+        <button class="toggle on" id="toggleTyping"></button>
+      </div>
+      <!-- Haptic feedback -->
+      <div class="settings-row">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M8.5 2v4M15.5 2v4M8.5 18v4M15.5 18v4M2 8.5h4M18 8.5h4M2 15.5h4M18 15.5h4" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+            <rect x="7" y="7" width="10" height="10" rx="3" stroke="var(--icon-stroke)" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblHaptic">Haptic Feedback</div>
+          <div class="settings-row-sub" id="lblHapticSub">Getaran saat mengirim pesan</div>
+        </div>
+        <button class="toggle on" id="toggleHaptic"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privasi -->
+  <div class="settings-section">
+    <div class="settings-section-label" id="lblPrivacy">Privasi & Data</div>
+    <div class="settings-card">
+      <div class="settings-row" id="btnClearHistory">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <polyline points="3 6 5 6 21 6" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblClear">Hapus Riwayat Chat</div>
+          <div class="settings-row-sub" id="lblClearSub">Hapus semua percakapan tersimpan</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M6 4l4 4-4 4" stroke="var(--icon-stroke)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="settings-row" id="btnExportData">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+            <polyline points="7 10 12 15 17 10" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <line x1="12" y1="15" x2="12" y2="3" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblExport">Ekspor Data Chat</div>
+          <div class="settings-row-sub" id="lblExportSub">Unduh riwayat percakapan (.txt)</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M6 4l4 4-4 4" stroke="var(--icon-stroke)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="version-tag" id="versionTag">ScorPlay AI v1.0.0</div>
+</div>
+
+<!-- ==================== CONFIRM MODAL ==================== -->
+<div class="modal" id="confirmModal">
+  <div class="modal-backdrop" id="modalBackdrop"></div>
+  <div class="modal-card">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Hapus Riwayat?</div>
+    <div class="modal-sub" id="modalSub">Semua percakapan akan dihapus. Tindakan ini tidak dapat dibatalkan.</div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" id="modalCancel">Batal</button>
+      <button class="modal-btn confirm" id="modalConfirm">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOAST ==================== -->
+<div class="toast" id="toast"></div>
+
+<!-- ==================== SCRIPT ==================== -->
+<script>
+/* ============================================================
+   STATE
+============================================================ */
+let userName = '';
+let chatHistory    = [];   // API messages array
+let allSessions    = [];   // [{id, title, preview, time, messages, apiHistory}]
+let currentSession = null;
+let welcomeGone    = false;
+let lang           = 'id';
+let settings = {
+  dark: false,
+  sound: true,
+  autoScroll: true,
+  showTimestamp: true,
+  typingIndicator: true,
+  haptic: true,
+  bubbleStyle: 'round',
+  responseLength: 'medium',
+  fontSize: 1
+};
+
+/* ============================================================
+   DOM REFS
+============================================================ */
+const nameScreen  = document.getElementById('nameScreen');
+const app         = document.getElementById('app');
+const nameInput   = document.getElementById('nameInput');
+const nameSubmit  = document.getElementById('nameSubmit');
+const welcomeText = document.getElementById('welcomeText');
+const welcomeWrap = document.getElementById('welcomeWrap');
+const chatArea    = document.getElementById('chatArea');
+const chatInput   = document.getElementById('chatInput');
+const sendBtn     = document.getElementById('sendBtn');
+const overlay     = document.getElementById('overlay');
+const historyPanel= document.getElementById('historyPanel');
+const settingsPanel=document.getElementById('settingsPanel');
+const historyBody = document.getElementById('historyBody');
+const toast       = document.getElementById('toast');
+const confirmModal= document.getElementById('confirmModal');
+const modalConfirm= document.getElementById('modalConfirm');
+const modalCancel = document.getElementById('modalCancel');
+const modalBackdrop=document.getElementById('modalBackdrop');
+const profileName = document.getElementById('profileName');
+const fontRange   = document.getElementById('fontRange');
+
+/* ============================================================
+   TRANSLATIONS
+============================================================ */
+const T = {
+  id: {
+    historyTitle:'Riwayat Chat', settingsTitle:'Pengaturan',
+    lblProfile:'Profil', lblUser:'Pengguna ScorPlay AI',
+    lblTampilan:'Tampilan', lblDark:'Mode Gelap', lblDarkSub:'Ubah tema ke gelap',
+    lblLang:'Bahasa', lblLangSub:'Pilih bahasa antarmuka',
+    lblFont:'Ukuran Font', lblFontSub:'Sesuaikan ukuran teks',
+    lblChatSect:'Chat', lblSound:'Suara Notifikasi', lblSoundSub:'Mainkan suara saat pesan tiba',
+    lblAutoScroll:'Auto Scroll', lblAutoScrollSub:'Gulir otomatis ke pesan terbaru',
+    lblTimestamp:'Tampilkan Waktu', lblTimestampSub:'Tampilkan waktu pengiriman pesan',
+    lblBubble:'Gaya Bubble', lblBubbleSub:'Tampilan gelembung pesan',
+    lblAISect:'AI', lblRespLen:'Panjang Respons', lblRespLenSub:'Respons singkat / sedang / panjang',
+    lblTypingInd:'Indikator Mengetik', lblTypingIndSub:'Animasi ... saat AI memproses',
+    lblHaptic:'Haptic Feedback', lblHapticSub:'Getaran saat mengirim pesan',
+    lblPrivacy:'Privasi & Data',
+    lblClear:'Hapus Riwayat Chat', lblClearSub:'Hapus semua percakapan tersimpan',
+    lblExport:'Ekspor Data Chat', lblExportSub:'Unduh riwayat percakapan (.txt)',
+    versionTag:'ScorPlay AI v1.0.0',
+    disclaimer:'Ai dapat memberikan jawaban yang salah kapan pun',
+    placeholder:'Tanya ScorPlay Ai',
+    clearModalTitle:'Hapus Riwayat?',
+    clearModalSub:'Semua percakapan akan dihapus. Tindakan ini tidak dapat dibatalkan.',
+    cancel:'Batal', delete:'Hapus',
+    historyEmpty:'Belum ada riwayat chat',
+    historyEmptySub:'Percakapan kamu akan muncul di sini',
+    newChatBtn:'+ Chat Baru',
+    toastCleared:'Riwayat dihapus',
+    toastExported:'Data diekspor',
+    toastNewChat:'Chat baru dimulai',
+    welcomeSub:'Ada yang perlu di tanyakan?',
+    namePrompt:'Siapa nama kamu?',
+    nameSub:'Masukkan nama untuk memulai',
+    namePlaceholder:'Tulis nama kamu...',
+    errNetwork:'Tidak dapat terhubung. Coba lagi nanti.',
+    errGeneral:'Terjadi kesalahan. Silakan coba lagi.'
+  },
+  en: {
+    historyTitle:'Chat History', settingsTitle:'Settings',
+    lblProfile:'Profile', lblUser:'ScorPlay AI User',
+    lblTampilan:'Display', lblDark:'Dark Mode', lblDarkSub:'Switch to dark theme',
+    lblLang:'Language', lblLangSub:'Choose interface language',
+    lblFont:'Font Size', lblFontSub:'Adjust text size',
+    lblChatSect:'Chat', lblSound:'Notification Sound', lblSoundSub:'Play sound when message arrives',
+    lblAutoScroll:'Auto Scroll', lblAutoScrollSub:'Auto scroll to latest message',
+    lblTimestamp:'Show Timestamp', lblTimestampSub:'Display message send time',
+    lblBubble:'Bubble Style', lblBubbleSub:'Chat bubble appearance',
+    lblAISect:'AI', lblRespLen:'Response Length', lblRespLenSub:'Short / medium / long responses',
+    lblTypingInd:'Typing Indicator', lblTypingIndSub:'Animation while AI is processing',
+    lblHaptic:'Haptic Feedback', lblHapticSub:'Vibrate when sending message',
+    lblPrivacy:'Privacy & Data',
+    lblClear:'Clear Chat History', lblClearSub:'Delete all saved conversations',
+    lblExport:'Export Chat Data', lblExportSub:'Download conversation history (.txt)',
+    versionTag:'ScorPlay AI v1.0.0',
+    disclaimer:'AI can give incorrect answers at any time',
+    placeholder:'Ask ScorPlay AI',
+    clearModalTitle:'Clear History?',
+    clearModalSub:'All conversations will be deleted. This action cannot be undone.',
+    cancel:'Cancel', delete:'Delete',
+    historyEmpty:'No chat history yet',
+    historyEmptySub:'Your conversations will appear here',
+    newChatBtn:'+ New Chat',
+    toastCleared:'History cleared',
+    toastExported:'Data exported',
+    toastNewChat:'New chat started',
+    welcomeSub:'Is there anything you need help with?',
+    namePrompt:'What is your name?',
+    nameSub:'Enter your name to get started',
+    namePlaceholder:'Type your name...',
+    errNetwork:'Cannot connect. Please try again later.',
+    errGeneral:'An error occurred. Please try again.'
+  }
+};
+
+function t(key) { return T[lang][key] || key; }
+
+function applyTranslations() {
+  const ids = [
+    'historyTitle','settingsTitle','lblProfile','lblUser','lblTampilan',
+    'lblDark','lblDarkSub','lblLang','lblLangSub','lblFont','lblFontSub',
+    'lblChatSect','lblSound','lblSoundSub','lblAutoScroll','lblAutoScrollSub',
+    'lblTimestamp','lblTimestampSub','lblBubble','lblBubbleSub',
+    'lblAISect','lblRespLen','lblRespLenSub','lblTypingInd','lblTypingIndSub',
+    'lblHaptic','lblHapticSub','lblPrivacy','lblClear','lblClearSub',
+    'lblExport','lblExportSub','versionTag'
+  ];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(id);
+  });
+  document.getElementById('disclaimer').textContent = t('disclaimer');
+  chatInput.placeholder = t('placeholder');
+  profileName.textContent = userName || '—';
+  renderHistory();
+}
+
+/* ============================================================
+   PANEL MANAGEMENT
+============================================================ */
+let activePanel = null;
+
+function openPanel(panel) {
+  closeAllPanels(false);
+  panel.classList.add('open');
+  overlay.classList.add('show');
+  activePanel = panel;
+}
+
+function closeAllPanels(animate = true) {
+  historyPanel.classList.remove('open');
+  settingsPanel.classList.remove('open');
+  overlay.classList.remove('show');
+  activePanel = null;
+}
+
+overlay.addEventListener('click', closeAllPanels);
+document.getElementById('closeHistory').addEventListener('click', closeAllPanels);
+document.getElementById('closeSettings').addEventListener('click', closeAllPanels);
+
+document.getElementById('btnHistory').addEventListener('click', () => {
+  renderHistory();
+  openPanel(historyPanel);
+});
+
+document.getElementById('btnNewChat').addEventListener('click', () => {
+  startNewChat();
+});
+
+document.getElementById('btnSettings').addEventListener('click', () => {
+  profileName.textContent = userName;
+  openPanel(settingsPanel);
+});
+
+/* ============================================================
+   NAME SCREEN
+============================================================ */
+nameInput.focus();
+
+function safe(t) {
+  const d = document.createElement('div');
+  d.textContent = t;
+  return d.innerHTML;
+}
+
+function submitName() {
+  const name = nameInput.value.trim();
+  if (!name) {
+    nameInput.style.outline = '2px solid #f472b6';
+    setTimeout(() => nameInput.style.outline = '', 600);
+    return;
+  }
+  userName = name;
+  profileName.textContent = userName;
+  nameScreen.classList.add('exit');
+  setTimeout(() => {
+    nameScreen.style.display = 'none';
+    app.classList.add('show');
+    chatInput.focus();
+    startNewSession();
+  }, 380);
+  welcomeText.innerHTML = `Hai ${safe(userName)}<br>${t('welcomeSub')}`;
+}
+
+nameSubmit.addEventListener('click', submitName);
+nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitName(); });
+
+/* ============================================================
+   SESSION MANAGEMENT
+============================================================ */
+function startNewSession() {
+  const session = {
+    id: Date.now(),
+    title: lang === 'id' ? 'Chat Baru' : 'New Chat',
+    preview: '',
+    time: new Date(),
+    messages: [],
+    apiHistory: []
+  };
+  allSessions.unshift(session);
+  currentSession = session;
+  chatHistory = session.apiHistory;
+}
+
+function startNewChat() {
+  clearWelcome();
+
+  Array.from(chatArea.children).forEach(c => c.remove());
+  welcomeGone = false;
+
+  const ww = document.createElement('div');
+  ww.className = 'welcome-wrap';
+  ww.id = 'welcomeWrap';
+  ww.innerHTML = `<div class="welcome-text" id="welcomeText">${welcomeText?.innerHTML || ''}</div>`;
+  chatArea.appendChild(ww);
+
+  startNewSession();
+  closeAllPanels();
+  showToast(t('toastNewChat'));
+  chatInput.focus();
+}
+
+/* ============================================================
+   HISTORY RENDER
+============================================================ */
+function renderHistory() {
+  historyBody.innerHTML = '';
+
+  const newBtn = document.createElement('button');
+  newBtn.className = 'history-new-btn';
+  newBtn.textContent = t('newChatBtn');
+  newBtn.addEventListener('click', startNewChat);
+  historyBody.appendChild(newBtn);
+
+  const sessions = allSessions.filter(s => s.messages.length > 0);
+
+  if (sessions.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'history-empty';
+    empty.innerHTML = `
+      <div class="history-empty-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <strong style="color:var(--text)">${t('historyEmpty')}</strong>
+      <span>${t('historyEmptySub')}</span>`;
+    historyBody.appendChild(empty);
+    return;
+  }
+
+  sessions.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const timeStr = s.time.toLocaleTimeString(lang === 'id' ? 'id-ID' : 'en-US', { hour:'2-digit', minute:'2-digit' });
+    item.innerHTML = `
+      <div class="history-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="history-info">
+        <div class="history-title">${safe(s.title)}</div>
+        <div class="history-preview">${safe(s.preview)}</div>
+      </div>
+      <div class="history-time">${timeStr}</div>`;
+    item.addEventListener('click', () => loadSession(s));
+    historyBody.appendChild(item);
+  });
+}
+
+function loadSession(session) {
+  Array.from(chatArea.children).forEach(c => c.remove());
+  welcomeGone = true;
+  currentSession = session;
+  chatHistory = session.apiHistory;
+
+  session.messages.forEach(m => {
+    renderMsg(m.text, m.role, m.time, false, m.isError);
+  });
+
+  closeAllPanels();
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+/* ============================================================
+   CHAT UTILS
+============================================================ */
+function getTime() {
+  return new Date().toLocaleTimeString(lang === 'id' ? 'id-ID' : 'en-US', { hour:'2-digit', minute:'2-digit' });
+}
+
+function clearWelcome() {
+  if (!welcomeGone) {
+    const ww = document.getElementById('welcomeWrap');
+    if (ww) ww.remove();
+    welcomeGone = true;
+  }
+}
+
+function renderMsg(text, role, timeStr, animate = true, isError = false) {
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+  if (!animate) wrap.style.animation = 'none';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  if (isError) bubble.classList.add('error-bubble');
+  bubble.textContent = text;
+
+  if (settings.bubbleStyle === 'sharp') {
+    bubble.style.borderRadius = '8px';
+  }
+
+  wrap.appendChild(bubble);
+
+  if (settings.showTimestamp) {
+    const timeEl = document.createElement('div');
+    timeEl.className = 'msg-time';
+    timeEl.style.textAlign = role === 'user' ? 'right' : 'left';
+    timeEl.textContent = timeStr;
+    wrap.appendChild(timeEl);
+  }
+
+  chatArea.appendChild(wrap);
+
+  if (settings.autoScroll) {
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+}
+
+function addMsg(text, role, isError = false) {
+  clearWelcome();
+  const timeStr = getTime();
+
+  renderMsg(text, role, timeStr, true, isError);
+
+  if (currentSession) {
+    currentSession.messages.push({ text, role, time: timeStr, isError });
+    if (role === 'user') {
+      if (!currentSession.preview) {
+        currentSession.title = text.slice(0, 28) + (text.length > 28 ? '…' : '');
+      }
+      currentSession.preview = text.slice(0, 40) + (text.length > 40 ? '…' : '');
+      currentSession.time = new Date();
+    }
+  }
+}
+
+/* ============================================================
+   TYPING INDICATOR
+============================================================ */
+function showTyping() {
+  if (!settings.typingIndicator) return;
+  clearWelcome();
+  const wrap = document.createElement('div');
+  wrap.className = 'msg ai';
+  wrap.id = 'typing';
+  const tb = document.createElement('div');
+  tb.className = 'typing-bubble';
+  tb.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  wrap.appendChild(tb);
+  chatArea.appendChild(wrap);
+  if (settings.autoScroll) chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function removeTyping() {
+  const el = document.getElementById('typing');
+  if (el) el.remove();
+}
+
+/* ============================================================
+   AI API CALL — uses Anthropic API (auto-auth in artifact context)
+============================================================ */
+function getSystemPrompt() {
+  const lengthMap = {
+    short: lang === 'id'
+      ? 'Berikan jawaban singkat dan padat, maksimal 2-3 kalimat.'
+      : 'Give short, concise answers, max 2-3 sentences.',
+    medium: '',
+    long: lang === 'id'
+      ? 'Berikan jawaban yang lengkap dan mendetail.'
+      : 'Give comprehensive and detailed answers.'
+  };
+  const lenInstruct = lengthMap[settings.responseLength] || '';
+
+  if (lang === 'id') {
+    return `Kamu adalah ScorPlay AI, asisten AI yang ramah, cerdas, dan sangat membantu. Nama pengguna adalah ${userName}. Jawab dalam bahasa Indonesia kecuali pengguna bertanya dalam bahasa lain. Berikan jawaban yang akurat, informatif, dan relevan seperti asisten AI pada umumnya. ${lenInstruct}`;
+  } else {
+    return `You are ScorPlay AI, a friendly, intelligent, and highly helpful AI assistant. The user's name is ${userName}. Answer in English unless the user asks in another language. Provide accurate, informative, and relevant answers like a general-purpose AI assistant. ${lenInstruct}`;
+  }
+}
+
+async function callAI(userMessage) {
+  const maxTokens = settings.responseLength === 'long' ? 2000
+    : settings.responseLength === 'short' ? 300 : 1000;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: getSystemPrompt(),
+      messages: chatHistory
+    })
+  });
+
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData?.error?.message || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.content?.[0]?.text || '';
+}
+
+/* ============================================================
+   SEND MESSAGE
+============================================================ */
+async function send() {
+  const text = chatInput.value.trim();
+  if (!text || sendBtn.disabled) return;
+  chatInput.value = '';
+
+  if (settings.haptic && navigator.vibrate) navigator.vibrate(10);
+
+  addMsg(text, 'user');
+  chatHistory.push({ role: 'user', content: text });
+
+  showTyping();
+  sendBtn.disabled = true;
+  sendBtn.style.opacity = '0.5';
+
+  try {
+    const reply = await callAI(text);
+    removeTyping();
+
+    if (reply) {
+      chatHistory.push({ role: 'assistant', content: reply });
+      addMsg(reply, 'ai');
+      if (settings.sound) playNotifSound();
+    } else {
+      addMsg(t('errGeneral'), 'ai', true);
+    }
+  } catch (err) {
+    removeTyping();
+    console.error('ScorPlay AI Error:', err);
+    const isNetwork = err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Failed');
+    addMsg(isNetwork ? t('errNetwork') : t('errGeneral'), 'ai', true);
+  }
+
+  sendBtn.disabled = false;
+  sendBtn.style.opacity = '1';
+  chatInput.focus();
+}
+
+sendBtn.addEventListener('click', send);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+/* ============================================================
+   NOTIFICATION SOUND
+============================================================ */
+function playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+    osc.start(); osc.stop(ctx.currentTime + 0.2);
+  } catch {}
+}
+
+/* ============================================================
+   TOAST
+============================================================ */
+let toastTimer;
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   SETTINGS TOGGLES
+============================================================ */
+function setupToggle(id, key, callback) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('click', () => {
+    settings[key] = !settings[key];
+    el.classList.toggle('on', settings[key]);
+    if (callback) callback(settings[key]);
+  });
+}
+
+setupToggle('toggleDark', 'dark', v => {
+  document.body.classList.toggle('dark', v);
+});
+
+setupToggle('toggleSound', 'sound');
+setupToggle('toggleAutoScroll', 'autoScroll');
+setupToggle('toggleTimestamp', 'showTimestamp');
+setupToggle('toggleTyping', 'typingIndicator');
+setupToggle('toggleHaptic', 'haptic');
+
+/* ============================================================
+   LANGUAGE
+============================================================ */
+window.setLang = function(l) {
+  lang = l;
+  document.getElementById('optID').classList.toggle('active', l === 'id');
+  document.getElementById('optEN').classList.toggle('active', l === 'en');
+  applyTranslations();
+  const wt = document.getElementById('welcomeText');
+  if (wt) wt.innerHTML = `Hai ${safe(userName)}<br>${t('welcomeSub')}`;
+};
+
+/* ============================================================
+   FONT SIZE
+============================================================ */
+fontRange.addEventListener('input', () => {
+  settings.fontSize = parseInt(fontRange.value);
+  document.body.classList.remove('font-sm', 'font-lg');
+  if (settings.fontSize === 0) document.body.classList.add('font-sm');
+  if (settings.fontSize === 2) document.body.classList.add('font-lg');
+});
+
+/* ============================================================
+   BUBBLE STYLE
+============================================================ */
+window.setBubble = function(style) {
+  settings.bubbleStyle = style;
+  document.getElementById('optBubRound').classList.toggle('active', style === 'round');
+  document.getElementById('optBubSharp').classList.toggle('active', style === 'sharp');
+  document.querySelectorAll('.bubble').forEach(b => {
+    b.style.borderRadius = style === 'sharp' ? '8px' : '';
+  });
+};
+
+/* ============================================================
+   RESPONSE LENGTH
+============================================================ */
+window.setRespLen = function(len) {
+  settings.responseLength = len;
+  ['Short','Medium','Long'].forEach(l => {
+    document.getElementById('opt' + l).classList.toggle('active', len === l.toLowerCase());
+  });
+};
+
+/* ============================================================
+   CLEAR HISTORY
+============================================================ */
+document.getElementById('btnClearHistory').addEventListener('click', () => {
+  document.getElementById('modalTitle').textContent = t('clearModalTitle');
+  document.getElementById('modalSub').textContent   = t('clearModalSub');
+  document.getElementById('modalCancel').textContent = t('cancel');
+  document.getElementById('modalConfirm').textContent = t('delete');
+  confirmModal.classList.add('show');
+});
+
+modalCancel.addEventListener('click',  () => confirmModal.classList.remove('show'));
+modalBackdrop.addEventListener('click',() => confirmModal.classList.remove('show'));
+
+modalConfirm.addEventListener('click', () => {
+  allSessions = [];
+  startNewChat();
+  confirmModal.classList.remove('show');
+  closeAllPanels();
+  showToast(t('toastCleared'));
+});
+
+/* ============================================================
+   EXPORT DATA
+============================================================ */
+document.getElementById('btnExportData').addEventListener('click', () => {
+  let content = `ScorPlay AI — Chat Export\n${'='.repeat(40)}\n`;
+  allSessions.forEach(s => {
+    if (s.messages.length === 0) return;
+    content += `\n[${s.title}]\n${'-'.repeat(30)}\n`;
+    s.messages.forEach(m => {
+      const prefix = m.role === 'user' ? userName : 'ScorPlay AI';
+      content += `[${m.time}] ${prefix}: ${m.text}\n`;
+    });
+  });
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'scorplay-ai-export.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(t('toastExported'));
+});
+
+/* ============================================================
+   INIT
+============================================================ */
+applyTranslations();
+</script>
+</body>
+</html>
