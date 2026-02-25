@@ -1912,6 +1912,16 @@ async function send() {
     });
 
     const data = await res.json();
+    if (!res.ok) {
+      console.error('Groq API Error:', data);
+      const errMsg = data?.error?.message || `HTTP ${res.status}`;
+      removeTyping();
+      addMsg(`❌ API Error: ${errMsg}`, 'ai');
+      sendBtn.disabled = false;
+      sendBtn.style.opacity = '1';
+      chatInput.focus();
+      return;
+    }
     const reply = data.choices?.[0]?.message?.content || (lang === 'id' ? 'Maaf, terjadi kesalahan.' : 'Sorry, an error occurred.');
     removeTyping();
     chatHistory.push({ role: 'assistant', content: reply });
