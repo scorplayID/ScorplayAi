@@ -858,6 +858,142 @@ body.font-lg .bubble { font-size: 17px; }
 
 .hdr-left-icon { filter: none; }
 body.dark .hdr-left-icon { filter: brightness(0) invert(1); }
+
+/* ============================================================
+   IMAGE UPLOAD PREVIEW
+============================================================ */
+.img-preview-wrap {
+  padding: 6px 16px 0;
+  display: none;
+}
+
+.img-preview-wrap.show { display: block; }
+
+.img-preview-inner {
+  position: relative;
+  display: inline-block;
+  background: var(--bg2);
+  border-radius: 14px;
+  overflow: hidden;
+  max-width: 120px;
+  transition: background 0.3s;
+}
+
+.img-preview-inner img {
+  display: block;
+  max-width: 120px;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+.img-preview-remove {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 22px; height: 22px;
+  background: rgba(0,0,0,0.55);
+  border: none; border-radius: 50%;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+
+.img-preview-remove:hover { background: rgba(0,0,0,0.8); }
+
+/* Upload button in input area */
+.upload-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: transparent;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.15s;
+  margin-right: 2px;
+}
+
+.upload-btn:active { transform: scale(0.9); background: var(--bg3); }
+
+/* Voice button */
+.voice-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: transparent;
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.15s;
+  margin-right: 2px;
+}
+
+.voice-btn:active { transform: scale(0.9); background: var(--bg3); }
+.voice-btn.recording { background: rgba(239,68,68,0.15); }
+.voice-btn.recording svg { animation: pulse 1s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Copy button on bubble */
+.bubble-wrap {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 22px; height: 22px;
+  background: rgba(0,0,0,0.12);
+  border: none; border-radius: 6px;
+  cursor: pointer;
+  display: none;
+  align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+
+.bubble-wrap:hover .copy-btn { display: flex; }
+.copy-btn:hover { background: rgba(0,0,0,0.25); }
+
+/* Scroll to bottom button */
+.scroll-bottom-btn {
+  position: absolute;
+  bottom: 90px; right: 16px;
+  width: 40px; height: 40px;
+  background: var(--text);
+  border: none; border-radius: 50%;
+  cursor: pointer;
+  display: none;
+  align-items: center; justify-content: center;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 20;
+}
+
+.scroll-bottom-btn.show { display: flex; }
+.scroll-bottom-btn:active { transform: scale(0.9); }
+
+/* Image message bubble */
+.msg-img {
+  max-width: 200px;
+  border-radius: 16px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.bubble.has-image {
+  padding: 8px;
+}
+
+/* Image analyze label */
+.img-label {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 </style>
 </head>
 <body>
@@ -921,7 +1057,33 @@ body.dark .hdr-left-icon { filter: brightness(0) invert(1); }
   <!-- Input Area -->
   <div class="input-area">
     <div class="input-border-wrap">
+      <!-- Image preview -->
+      <div class="img-preview-wrap" id="imgPreviewWrap">
+        <div class="img-preview-inner">
+          <img id="imgPreviewEl" src="" alt="preview"/>
+          <button class="img-preview-remove" id="imgPreviewRemove">
+            <svg width="10" height="10" viewBox="0 0 14 14" fill="none">
+              <path d="M1 1l12 12M13 1L1 13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none"/>
       <div class="input-inner">
+        <button class="upload-btn" id="uploadBtn" title="Upload foto">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="3" y="3" width="18" height="18" rx="4" stroke="var(--icon-stroke)" stroke-width="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5" fill="var(--icon-stroke)"/>
+            <path d="M21 15l-5-5L5 21" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="voice-btn" id="voiceBtn" title="Voice input">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <rect x="9" y="2" width="6" height="12" rx="3" stroke="var(--icon-stroke)" stroke-width="2"/>
+            <path d="M5 10v2a7 7 0 0 0 14 0v-2" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M12 19v3M9 22h6" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
         <input class="chat-input" id="chatInput" type="text" placeholder="Tanya ScorPlay Ai" autocomplete="off"/>
         <button class="send-btn" id="sendBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -934,6 +1096,13 @@ body.dark .hdr-left-icon { filter: brightness(0) invert(1); }
     <div class="disclaimer" id="disclaimer">Ai dapat memberikan jawaban yang salah kapan pun</div>
   </div>
 </div>
+
+<!-- ==================== SCROLL BOTTOM ==================== -->
+<button class="scroll-bottom-btn" id="scrollBottomBtn" title="Scroll ke bawah">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <path d="M12 5v14M5 12l7 7 7-7" stroke="var(--bg)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 
 <!-- ==================== OVERLAY ==================== -->
 <div class="overlay" id="overlay"></div>
@@ -1149,6 +1318,22 @@ body.dark .hdr-left-icon { filter: brightness(0) invert(1); }
   <div class="settings-section">
     <div class="settings-section-label" id="lblPrivacy">Privasi & Data</div>
     <div class="settings-card">
+      <div class="settings-row" id="btnResetName">
+        <div class="settings-row-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="4" stroke="var(--icon-stroke)" stroke-width="2"/>
+            <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" stroke="var(--icon-stroke)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M19 11l2 2-2 2M15 13h6" stroke="var(--icon-stroke)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="settings-row-info">
+          <div class="settings-row-title" id="lblResetName">Ganti Nama</div>
+          <div class="settings-row-sub" id="lblResetNameSub">Ubah nama pengguna kamu</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M6 4l4 4-4 4" stroke="var(--icon-stroke)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
       <div class="settings-row" id="btnClearHistory">
         <div class="settings-row-icon">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -1209,7 +1394,7 @@ body.dark .hdr-left-icon { filter: brightness(0) invert(1); }
 /* ============================================================
    STATE
 ============================================================ */
-let userName = '';
+let userName = localStorage.getItem('scorplay_username') || '';
 let chatHistory    = [];
 let allSessions    = [];
 let currentSession = null;
@@ -1285,7 +1470,9 @@ const T = {
     welcomeSub:'Ada yang perlu di tanyakan?',
     namePrompt:'Siapa nama kamu?',
     nameSub:'Masukkan nama untuk memulai',
-    namePlaceholder:'Tulis nama kamu...'
+    namePlaceholder:'Tulis nama kamu...',
+    lblResetName:'Ganti Nama',
+    lblResetNameSub:'Ubah nama pengguna kamu'
   },
   en: {
     historyTitle:'Chat History', settingsTitle:'Settings',
@@ -1318,7 +1505,9 @@ const T = {
     welcomeSub:'Is there anything you need help with?',
     namePrompt:'What is your name?',
     nameSub:'Enter your name to get started',
-    namePlaceholder:'Type your name...'
+    namePlaceholder:'Type your name...',
+    lblResetName:'Change Name',
+    lblResetNameSub:'Change your username'
   }
 };
 
@@ -1377,7 +1566,16 @@ document.getElementById('btnSettings').addEventListener('click', () => {
 /* ============================================================
    NAME SCREEN
 ============================================================ */
-nameInput.focus();
+// Auto-skip name screen if already saved
+if (userName) {
+  nameScreen.style.display = 'none';
+  app.classList.add('show');
+  startNewSession();
+  welcomeText.innerHTML = `Hai ${safe(userName)}<br>${t('welcomeSub')}`;
+  profileName.textContent = userName;
+} else {
+  nameInput.focus();
+}
 
 function safe(str) {
   const d = document.createElement('div');
@@ -1393,6 +1591,7 @@ function submitName() {
     return;
   }
   userName = name;
+  localStorage.setItem('scorplay_username', userName);
   profileName.textContent = userName;
   nameScreen.classList.add('exit');
   setTimeout(() => {
@@ -1519,20 +1718,56 @@ function clearWelcome() {
   }
 }
 
-function renderMsg(text, role, timeStr, animate = true) {
+function renderMsg(text, role, timeStr, animate = true, imageUrl = null) {
   const wrap = document.createElement('div');
   wrap.className = `msg ${role}`;
   if (!animate) wrap.style.animation = 'none';
 
+  const bubbleWrap = document.createElement('div');
+  bubbleWrap.className = 'bubble-wrap';
+  bubbleWrap.style.position = 'relative';
+  bubbleWrap.style.display = 'inline-block';
+  bubbleWrap.style.maxWidth = '100%';
+
   const bubble = document.createElement('div');
-  bubble.className = 'bubble';
-  bubble.textContent = text;
+  bubble.className = 'bubble' + (imageUrl ? ' has-image' : '');
+
+  if (imageUrl) {
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.className = 'msg-img';
+    img.alt = 'Uploaded image';
+    bubble.appendChild(img);
+    if (text) {
+      const label = document.createElement('div');
+      label.className = 'img-label';
+      label.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"/></svg> ${text}`;
+      bubble.appendChild(label);
+    }
+  } else {
+    bubble.textContent = text;
+  }
 
   if (settings.bubbleStyle === 'sharp') {
     bubble.style.borderRadius = '8px';
   }
 
-  wrap.appendChild(bubble);
+  // Copy button (only for AI messages with text)
+  if (role === 'ai' && text) {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.title = 'Salin';
+    copyBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="var(--text)" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="var(--text)" stroke-width="2"/></svg>`;
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(text).then(() => showToast(lang === 'id' ? 'Disalin!' : 'Copied!'));
+    });
+    bubbleWrap.appendChild(bubble);
+    bubbleWrap.appendChild(copyBtn);
+  } else {
+    bubbleWrap.appendChild(bubble);
+  }
+
+  wrap.appendChild(bubbleWrap);
 
   if (settings.showTimestamp) {
     const timeEl = document.createElement('div');
@@ -1549,13 +1784,13 @@ function renderMsg(text, role, timeStr, animate = true) {
   }
 }
 
-function addMsg(text, role) {
+function addMsg(text, role, imageUrl = null) {
   clearWelcome();
   const timeStr = getTime();
-  renderMsg(text, role, timeStr, true);
+  renderMsg(text, role, timeStr, true, imageUrl);
 
   if (currentSession) {
-    currentSession.messages.push({ text, role, time: timeStr });
+    currentSession.messages.push({ text, role, time: timeStr, imageUrl });
     if (role === 'user') {
       if (!currentSession.preview) {
         currentSession.title = text.slice(0, 28) + (text.length > 28 ? '…' : '');
@@ -1605,15 +1840,48 @@ function getSystemPrompt() {
   }
 }
 
+let pendingImageBase64 = null;
+let pendingImageUrl = null;
+
 async function send() {
   const text = chatInput.value.trim();
-  if (!text || sendBtn.disabled) return;
+  const hasImage = !!pendingImageBase64;
+  if (!text && !hasImage || sendBtn.disabled) return;
+
+  const userText = text;
+  const imgBase64 = pendingImageBase64;
+  const imgUrl = pendingImageUrl;
+
   chatInput.value = '';
+  pendingImageBase64 = null;
+  pendingImageUrl = null;
+  document.getElementById('imgPreviewWrap').classList.remove('show');
+  document.getElementById('imgPreviewEl').src = '';
+  document.getElementById('fileInput').value = '';
 
   if (settings.haptic && navigator.vibrate) navigator.vibrate(10);
 
-  addMsg(text, 'user');
-  chatHistory.push({ role: 'user', content: text });
+  // Display user message (with image if any)
+  const displayText = userText || (lang === 'id' ? 'Foto' : 'Image');
+  addMsg(displayText, 'user', imgUrl);
+
+  // Build API history message
+  let userMsgContent;
+  if (imgBase64 && userText) {
+    userMsgContent = [
+      { type: 'text', text: userText },
+      { type: 'image_url', image_url: { url: imgBase64 } }
+    ];
+  } else if (imgBase64) {
+    userMsgContent = [
+      { type: 'text', text: lang === 'id' ? 'Tolong jelaskan gambar ini.' : 'Please describe this image.' },
+      { type: 'image_url', image_url: { url: imgBase64 } }
+    ];
+  } else {
+    userMsgContent = userText;
+  }
+
+  chatHistory.push({ role: 'user', content: userMsgContent });
 
   showTyping();
   sendBtn.disabled = true;
@@ -1621,10 +1889,15 @@ async function send() {
 
   try {
     const GROQ_API_KEY = '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';
+
+    // Use vision model if image is present, else use text model
+    const model = imgBase64 ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile';
+
     const groqMessages = [
       { role: 'system', content: getSystemPrompt() },
       ...chatHistory
     ];
+
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -1632,7 +1905,7 @@ async function send() {
         'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model,
         max_tokens: settings.responseLength === 'long' ? 2000 : settings.responseLength === 'short' ? 300 : 1000,
         messages: groqMessages
       })
@@ -1657,6 +1930,113 @@ async function send() {
 
 sendBtn.addEventListener('click', send);
 chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+/* ============================================================
+   IMAGE UPLOAD
+============================================================ */
+const fileInput = document.getElementById('fileInput');
+const uploadBtn = document.getElementById('uploadBtn');
+const imgPreviewWrap = document.getElementById('imgPreviewWrap');
+const imgPreviewEl = document.getElementById('imgPreviewEl');
+const imgPreviewRemove = document.getElementById('imgPreviewRemove');
+
+uploadBtn.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast(lang === 'id' ? 'File harus berupa gambar' : 'File must be an image');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    showToast(lang === 'id' ? 'Gambar terlalu besar (maks 10MB)' : 'Image too large (max 10MB)');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    pendingImageBase64 = e.target.result; // data:image/...;base64,...
+    pendingImageUrl = e.target.result;
+    imgPreviewEl.src = pendingImageUrl;
+    imgPreviewWrap.classList.add('show');
+    chatInput.focus();
+    chatInput.placeholder = lang === 'id' ? 'Tanya tentang foto ini...' : 'Ask about this photo...';
+  };
+  reader.readAsDataURL(file);
+});
+
+imgPreviewRemove.addEventListener('click', () => {
+  pendingImageBase64 = null;
+  pendingImageUrl = null;
+  imgPreviewWrap.classList.remove('show');
+  imgPreviewEl.src = '';
+  fileInput.value = '';
+  chatInput.placeholder = t('placeholder');
+});
+
+/* ============================================================
+   VOICE INPUT
+============================================================ */
+const voiceBtn = document.getElementById('voiceBtn');
+let recognition = null;
+let isRecording = false;
+
+if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    chatInput.value = transcript;
+    chatInput.focus();
+  };
+
+  recognition.onend = () => {
+    isRecording = false;
+    voiceBtn.classList.remove('recording');
+  };
+
+  recognition.onerror = () => {
+    isRecording = false;
+    voiceBtn.classList.remove('recording');
+    showToast(lang === 'id' ? 'Gagal merekam suara' : 'Voice recording failed');
+  };
+
+  voiceBtn.addEventListener('click', () => {
+    if (isRecording) {
+      recognition.stop();
+    } else {
+      recognition.lang = lang === 'id' ? 'id-ID' : 'en-US';
+      recognition.start();
+      isRecording = true;
+      voiceBtn.classList.add('recording');
+      showToast(lang === 'id' ? 'Sedang merekam...' : 'Recording...');
+    }
+  });
+} else {
+  voiceBtn.style.display = 'none';
+}
+
+/* ============================================================
+   SCROLL TO BOTTOM BUTTON
+============================================================ */
+const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+
+chatArea.addEventListener('scroll', () => {
+  const distFromBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight;
+  if (distFromBottom > 120) {
+    scrollBottomBtn.classList.add('show');
+  } else {
+    scrollBottomBtn.classList.remove('show');
+  }
+});
+
+scrollBottomBtn.addEventListener('click', () => {
+  chatArea.scrollTo({ top: chatArea.scrollHeight, behavior: 'smooth' });
+});
 
 /* ============================================================
    NOTIFICATION SOUND
@@ -1798,6 +2178,56 @@ document.getElementById('btnExportData').addEventListener('click', () => {
 /* ============================================================
    INIT
 ============================================================ */
+/* ============================================================
+   RESET NAME
+============================================================ */
+document.getElementById('btnResetName').addEventListener('click', () => {
+  document.getElementById('modalTitle').textContent = lang === 'id' ? 'Ganti Nama?' : 'Change Name?';
+  document.getElementById('modalSub').textContent = lang === 'id' ? 'Kamu akan diminta mengisi nama baru.' : 'You will be asked to enter a new name.';
+  document.getElementById('modalCancel').textContent = t('cancel');
+  document.getElementById('modalConfirm').textContent = lang === 'id' ? 'Ya, Ganti' : 'Yes, Change';
+  confirmModal.classList.add('show');
+
+  // Override confirm action temporarily
+  const originalHandler = modalConfirm._handler;
+  if (modalConfirm._handler) {
+    modalConfirm.removeEventListener('click', modalConfirm._handler);
+  }
+  const resetHandler = () => {
+    localStorage.removeItem('scorplay_username');
+    confirmModal.classList.remove('show');
+    closeAllPanels();
+    // Show name screen again
+    nameScreen.style.display = 'flex';
+    nameScreen.classList.remove('exit');
+    nameInput.value = '';
+    app.classList.remove('show');
+    // Restore normal confirm behavior
+    modalConfirm.removeEventListener('click', resetHandler);
+    setupModalConfirm();
+    setTimeout(() => nameInput.focus(), 100);
+  };
+  modalConfirm._handler = resetHandler;
+  modalConfirm.addEventListener('click', resetHandler);
+});
+
+function setupModalConfirm() {
+  modalConfirm._handler = () => {
+    allSessions = [];
+    startNewChat();
+    confirmModal.classList.remove('show');
+    closeAllPanels();
+    showToast(t('toastCleared'));
+  };
+}
+
+// Apply translations for new keys
+const extraTransKeys = ['lblResetName', 'lblResetNameSub'];
+extraTransKeys.forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = t(id);
+});
+
 applyTranslations();
 </script>
 </body>
